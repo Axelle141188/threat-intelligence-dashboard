@@ -25,7 +25,7 @@ visualizes malicious IPs, and allows instant IP reputation checks.
 
 ```bash
 # 1. Clone le repository
-git clone https://github.com/TON_USERNAME/threat-intelligence-dashboard
+git clone https://github.com/Axelle141188/threat-intelligence-dashboard
 cd threat-intelligence-dashboard
 
 # 2. Installe les dépendances
