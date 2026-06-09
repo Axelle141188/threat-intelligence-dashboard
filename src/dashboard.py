@@ -14,26 +14,34 @@ st.set_page_config(
     page_icon="🛡️",
     layout="wide"
 )
+
 collector = ThreatIntelCollector()
 analyzer = ThreatAnalyzer()
+
+@st.cache_data(ttl=3600)
+def load_threat_data():
+    """Charge les feeds automatiquement — rafraîchi toutes les heures"""
+    return collector.collect_all()
 
 st.title("🛡️ Threat Intelligence Dashboard")
 st.caption("Real-time Cyber Threat Monitoring System | Luxembourg Banking Sector Focus")
 st.divider()
+
+# Chargement automatique au démarrage
+with st.spinner("Chargement des threat feeds en cours..."):
+    load_threat_data()
+
 col_btn, col_status = st.columns([1, 3])
-
 with col_btn:
-    update = st.button("Mettre à jour les données")
-
+    update = st.button("🔄 Forcer la mise à jour")
 with col_status:
     if update:
+        st.cache_data.clear()
         with st.spinner("Collecte en cours..."):
-            collector.collect_all()
+            load_threat_data()
         st.success("✅ Données mises à jour avec succès !")
-        st.subheader("Statistiques générales")
 
 stats = analyzer.get_stats()
-
 if stats:
     col1, col2, col3 = st.columns(3)
     
@@ -48,15 +56,12 @@ if stats:
                   value=len(stats.get('sources_count', {})))
     
     st.caption(f"Dernière mise à jour : {stats.get('last_update', 'Jamais')}")
-
 else:
-    st.warning("Aucune donnée. Clique sur 'Mettre à jour les données'.")
+    st.warning("⚠️ Chargement des données en cours...")
 
 st.divider()
 st.subheader("Visualisations")
-
 col_left, col_right = st.columns(2)
-
 threat_types = analyzer.get_top_threat_types()
 sources = analyzer.get_sources_breakdown()
 
@@ -98,7 +103,6 @@ with col_right:
 
 st.divider()
 st.subheader("Vérifier une adresse IP")
-
 ip_input = st.text_input(
     "Entrez une adresse IP",
     placeholder="ex: 192.168.1.1"
@@ -109,7 +113,7 @@ if st.button("Vérifier"):
         result = collector.check_ip(ip_input.strip())
         
         if result['status'] == 'MALICIOUS':
-            st.error(f"IP MALVEILLANTE : {ip_input}")
+            st.error(f"⚠️ IP MALVEILLANTE : {ip_input}")
             st.write(f"**Sources :** {', '.join(result['sources'])}")
             st.write(f"**Types :** {', '.join(result['types'])}")
             
@@ -121,4 +125,3 @@ if st.button("Vérifier"):
             st.warning(result.get('message', 'Erreur inconnue.'))
     else:
         st.warning("Merci d'entrer une adresse IP.")
-        
